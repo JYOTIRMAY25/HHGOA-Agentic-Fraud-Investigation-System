@@ -12,7 +12,7 @@ uvicorn>=0.27.0
 python-dotenv>=1.0.0
 
 # TigerGraph connectivity
-pyTigerGraph>=3.6.0
+pyTigerGraph==2.0.4
 
 # LLM engine (Gemini) - optional, used when GEMINI_API_KEY is set
 google-genai>=1.0.0
