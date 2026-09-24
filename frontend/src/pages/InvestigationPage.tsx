@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiPath } from '@/services/api-client';
 import {
   Shield, ArrowLeft, Search, AlertTriangle, CheckCircle,
   Clock, Cpu, Database, MapPin, Mail, CreditCard, User,
@@ -343,7 +344,7 @@ export default function InvestigationPage() {
     }, 600);
 
     try {
-      const res = await fetch('/investigate', {
+      const res = await fetch(apiPath('/investigate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transaction_id: txnId.trim() }),

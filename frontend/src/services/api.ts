@@ -4,6 +4,7 @@
 // with HTTP calls to the MCP/TigerGraph backend.
 
 import { isDemoMode } from '@/config';
+import { apiPath } from '@/services/api-client';
 import * as mockInvestigations from '@/mock/investigations';
 import * as mockCases from '@/mock/cases';
 import * as mockEvidence from '@/mock/evidence';
@@ -33,13 +34,13 @@ import type {
 
 export async function getInvestigations(): Promise<Investigation[]> {
   if (isDemoMode()) return mockInvestigations.getInvestigations();
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/investigations`);
+  const res = await fetch(apiPath('/investigations'));
   return res.json();
 }
 
 export async function getInvestigation(id: string): Promise<Investigation | undefined> {
   if (isDemoMode()) return mockInvestigations.getInvestigation(id);
-  const res = await fetch(`/api/v1/investigations/${id}`);
+  const res = await fetch(apiPath(`/api/v1/investigations/${id}`));
   return res.json();
 }
 
@@ -49,13 +50,13 @@ export async function getInvestigation(id: string): Promise<Investigation | unde
 
 export async function getCases(): Promise<Case[]> {
   if (isDemoMode()) return mockCases.getCases();
-  const res = await fetch('/api/v1/cases');
+  const res = await fetch(apiPath('/api/v1/cases'));
   return res.json();
 }
 
 export async function getCase(id: string): Promise<Case | undefined> {
   if (isDemoMode()) return mockCases.getCase(id);
-  const res = await fetch(`/api/v1/cases/${id}`);
+  const res = await fetch(apiPath(`/api/v1/cases/${id}`));
   return res.json();
 }
 
@@ -65,13 +66,13 @@ export async function getCase(id: string): Promise<Case | undefined> {
 
 export async function getEvidence(): Promise<Evidence[]> {
   if (isDemoMode()) return mockEvidence.getEvidence();
-  const res = await fetch('/api/v1/evidence');
+  const res = await fetch(apiPath('/api/v1/evidence'));
   return res.json();
 }
 
 export async function getEvidenceByCase(caseId: string): Promise<Evidence[]> {
   if (isDemoMode()) return mockEvidence.getEvidenceByCase(caseId);
-  const res = await fetch(`/api/v1/evidence?caseId=${caseId}`);
+  const res = await fetch(apiPath(`/api/v1/evidence?caseId=${caseId}`));
   return res.json();
 }
 
@@ -81,13 +82,13 @@ export async function getEvidenceByCase(caseId: string): Promise<Evidence[]> {
 
 export async function getGraph(): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] }> {
   if (isDemoMode()) return mockGraph.getGraph();
-  const res = await fetch('/api/v1/graph');
+  const res = await fetch(apiPath('/api/v1/graph'));
   return res.json();
 }
 
 export async function getGraphForCase(caseId: string): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] }> {
   if (isDemoMode()) return mockGraph.getGraphForCase(caseId);
-  const res = await fetch(`/api/v1/graph?caseId=${caseId}`);
+  const res = await fetch(apiPath(`/api/v1/graph?caseId=${caseId}`));
   return res.json();
 }
 
@@ -97,14 +98,14 @@ export async function getGraphForCase(caseId: string): Promise<{ nodes: GraphNod
 
 export async function getCaseMemory(caseId?: string): Promise<CaseMemory> {
   if (isDemoMode()) return mockMemory.getCaseMemory(caseId);
-  const url = caseId ? `/api/v1/memory?caseId=${caseId}` : '/api/v1/memory';
+  const url = caseId ? apiPath(`/api/v1/memory?caseId=${caseId}`) : apiPath('/api/v1/memory');
   const res = await fetch(url);
   return res.json();
 }
 
 export async function getSimilarCases(caseId: string): Promise<SimilarCase[]> {
   if (isDemoMode()) return mockMemory.getSimilarCases(caseId);
-  const res = await fetch(`/api/v1/memory/${caseId}/similar`);
+  const res = await fetch(apiPath(`/api/v1/memory/${caseId}/similar`));
   return res.json();
 }
 
@@ -114,7 +115,7 @@ export async function getSimilarCases(caseId: string): Promise<SimilarCase[]> {
 
 export async function getAgentAssessment(investigationId: string): Promise<AgentAssessment> {
   if (isDemoMode()) return mockAgent.getAgentAssessment(investigationId);
-  const res = await fetch(`/api/v1/investigations/${investigationId}/agent`);
+  const res = await fetch(apiPath(`/api/v1/investigations/${investigationId}/agent`));
   return res.json();
 }
 
@@ -132,7 +133,7 @@ export async function requestEvidence(
   type: 'customer_validation' | 'step_up_auth' | 'analyst_info'
 ): Promise<EvidenceRequest> {
   if (isDemoMode()) return mockAgent.requestEvidence(investigationId, type);
-  const res = await fetch(`/api/v1/investigations/${investigationId}/evidence-request`, {
+  const res = await fetch(apiPath(`/api/v1/investigations/${investigationId}/evidence-request`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type }),
@@ -142,7 +143,7 @@ export async function requestEvidence(
 
 export async function approveAction(investigationId: string, actionId: string): Promise<Action> {
   if (isDemoMode()) return mockAgent.approveAction(investigationId, actionId);
-  const res = await fetch(`/api/v1/investigations/${investigationId}/actions/${actionId}/approve`, {
+  const res = await fetch(apiPath(`/api/v1/investigations/${investigationId}/actions/${actionId}/approve`), {
     method: 'POST',
   });
   return res.json();
@@ -150,7 +151,7 @@ export async function approveAction(investigationId: string, actionId: string): 
 
 export async function rejectAction(investigationId: string, actionId: string): Promise<Action> {
   if (isDemoMode()) return mockAgent.approveAction(investigationId, actionId);
-  const res = await fetch(`/api/v1/investigations/${investigationId}/actions/${actionId}/reject`, {
+  const res = await fetch(apiPath(`/api/v1/investigations/${investigationId}/actions/${actionId}/reject`), {
     method: 'POST',
   });
   return res.json();

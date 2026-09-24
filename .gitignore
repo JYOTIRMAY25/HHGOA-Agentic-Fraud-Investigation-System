@@ -37,3 +37,6 @@ build/
 .vscode/
 .idea/
 *.swp
+
+# TypeScript build info
+*.tsbuildinfo
