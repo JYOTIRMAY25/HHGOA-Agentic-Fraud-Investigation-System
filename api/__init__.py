@@ -1,0 +1,1 @@
+"""HHGOA FastAPI backend package."""

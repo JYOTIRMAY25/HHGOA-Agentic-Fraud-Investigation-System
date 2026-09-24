@@ -1,0 +1,193 @@
+// ========================================================
+// HHGOA TIGERGRAPH AGENTIC FRAUD INVESTIGATION
+// Graph Schema Definition (DDL)
+// Graph Name: HHGOA_Fraud_Graph
+// Source: docs/TIGERGRAPH_SCHEMA.md
+// ========================================================
+
+DROP GRAPH HHGOA_Fraud_Graph
+CREATE GRAPH HHGOA_Fraud_Graph()
+
+USE GRAPH HHGOA_Fraud_Graph
+
+// --------------------------------------------------------
+// 1. VERTEX TYPE DEFINITIONS
+// --------------------------------------------------------
+
+// Customer: Cardholder and account owner
+CREATE VERTEX Customer (
+    PRIMARY_KEY customer_id STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// Card: Payment card instrument
+CREATE VERTEX Card (
+    PRIMARY_KEY card_id STRING,
+    network STRING,
+    card_type STRING,
+    issuer_code STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// Transaction: Financial authorization / charge event
+CREATE VERTEX Transaction (
+    PRIMARY_KEY transaction_id STRING,
+    ts DATETIME,
+    amount FLOAT,
+    channel STRING,
+    product_cd STRING,
+    risk_score FLOAT,
+    dist1 FLOAT,
+    dist2 FLOAT,
+    is_flagged BOOL DEFAULT false
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// DeviceProfile: Digital identity and browser/hardware fingerprint
+CREATE VERTEX DeviceProfile (
+    PRIMARY_KEY device_profile_id STRING,
+    device_info STRING,
+    device_type STRING,
+    os STRING,
+    browser STRING,
+    screen_resolution STRING,
+    device_status STRING,
+    proxy_flag STRING,
+    match_status STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// EmailDomain: Email infrastructure domain
+CREATE VERTEX EmailDomain (
+    PRIMARY_KEY domain_name STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// BillingRegion: Geographic billing jurisdiction
+CREATE VERTEX BillingRegion (
+    PRIMARY_KEY region_id STRING,
+    region_code STRING,
+    country_code STRING,
+    is_domestic BOOL DEFAULT true
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// FraudCase: Unified internal case record (historical memory and active investigations)
+CREATE VERTEX FraudCase (
+    PRIMARY_KEY case_id STRING,
+    status STRING,
+    trigger_type STRING,
+    trigger_text STRING,
+    opened_at DATETIME,
+    closed_at DATETIME,
+    outcome STRING,
+    pattern STRING,
+    exposure_usd FLOAT DEFAULT 0.0,
+    report_filed BOOL DEFAULT false,
+    actions_taken STRING,
+    approval_route STRING,
+    analyst_notes STRING,
+    sar_narrative STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// FraudPattern: Knowledge anchor for recognized fraud typologies
+CREATE VERTEX FraudPattern (
+    PRIMARY_KEY pattern_id STRING,
+    pattern_name STRING,
+    description STRING,
+    typology_rules STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// PolicyRule: Bank fraud policy governance and approval routing rules
+CREATE VERTEX PolicyRule (
+    PRIMARY_KEY rule_id STRING,
+    rule_name STRING,
+    description STRING,
+    condition STRING,
+    prescribed_action STRING,
+    approval_route STRING
+) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+// --------------------------------------------------------
+// 2. EDGE TYPE DEFINITIONS (WITH REVERSE EDGES)
+// --------------------------------------------------------
+
+// Ownership: Customer owns payment card
+CREATE DIRECTED EDGE OWNS (
+    FROM Customer, 
+    TO Card, 
+    opened_date DATETIME
+) WITH REVERSE_EDGE="OWNED_BY";
+
+// Execution: Card performs transaction
+CREATE DIRECTED EDGE PERFORMS (
+    FROM Card, 
+    TO Transaction
+) WITH REVERSE_EDGE="PERFORMED_BY";
+
+// Temporal Chaining: Next sequential transaction on the same card
+CREATE DIRECTED EDGE NEXT_TRANSACTION (
+    FROM Transaction, 
+    TO Transaction, 
+    time_delta_sec INT, 
+    amount_delta FLOAT
+) WITH REVERSE_EDGE="PREV_TRANSACTION";
+
+// Digital Attribution: Transaction performed via DeviceProfile
+CREATE DIRECTED EDGE USED_DEVICE (
+    FROM Transaction, 
+    TO DeviceProfile, 
+    is_new_device BOOL
+) WITH REVERSE_EDGE="USED_IN_TXN";
+
+// Attribution: Purchaser email domain
+CREATE DIRECTED EDGE PURCHASER_EMAIL (
+    FROM Transaction, 
+    TO EmailDomain
+) WITH REVERSE_EDGE="PURCHASER_TXNS";
+
+// Attribution: Recipient email domain
+CREATE DIRECTED EDGE RECIPIENT_EMAIL (
+    FROM Transaction, 
+    TO EmailDomain
+) WITH REVERSE_EDGE="RECIPIENT_TXNS";
+
+// Geographic Attribution: Transaction billed in region
+CREATE DIRECTED EDGE BILLED_IN (
+    FROM Transaction, 
+    TO BillingRegion
+) WITH REVERSE_EDGE="BILLED_TXNS";
+
+// Case Scope: Case investigates specific transaction
+CREATE DIRECTED EDGE INVESTIGATES_TXN (
+    FROM FraudCase, 
+    TO Transaction, 
+    is_flagged_trigger BOOL, 
+    is_confirmed_fraud BOOL
+) WITH REVERSE_EDGE="INVOLVED_IN_CASE";
+
+// Case Scope: Primary compromised card under investigation
+CREATE DIRECTED EDGE TARGETS_CARD (
+    FROM FraudCase, 
+    TO Card
+) WITH REVERSE_EDGE="HAS_CASES";
+
+// Case Scope: Co-compromised or syndicate-linked cards
+CREATE DIRECTED EDGE CONNECTS_TO_CARD (
+    FROM FraudCase, 
+    TO Card
+) WITH REVERSE_EDGE="CONNECTED_IN_CASES";
+
+// Case Scope: Primary customer under investigation
+CREATE DIRECTED EDGE INVESTIGATES_CUSTOMER (
+    FROM FraudCase, 
+    TO Customer
+) WITH REVERSE_EDGE="CUSTOMER_CASES";
+
+// Knowledge Grounding: Case exhibits recognized fraud pattern
+CREATE DIRECTED EDGE EXHIBITS_PATTERN (
+    FROM FraudCase, 
+    TO FraudPattern
+) WITH REVERSE_EDGE="CASES_WITH_PATTERN";
+
+// Policy Governance: Case governed by policy rule
+CREATE DIRECTED EDGE GOVERNED_BY (
+    FROM FraudCase, 
+    TO PolicyRule, 
+    is_satisfied BOOL, 
+    mandated_action STRING
+) WITH REVERSE_EDGE="ENFORCING_CASES";

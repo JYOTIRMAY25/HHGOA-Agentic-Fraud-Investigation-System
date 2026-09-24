@@ -1,0 +1,109 @@
+{
+  "case_id": "HHG-018",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.55,
+    "pattern": "account_takeover",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3491361"
+    ],
+    "first_suspicious_txn_id": "3491361",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 39.08,
+    "evidence": [
+      {
+        "claim": "Customer C02354 disputes $39.08 in-person transaction on 2016-11-27 in billing region 126. Region 126 is the cardholder's second most common region (686 of 7,091 transactions).",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3491361",
+          "C02354-K2"
+        ]
+      },
+      {
+        "claim": "In-person channel (product W): no device record available. Amount $39.08 is well below the cardholder's average of $141.15.",
+        "source": "graph",
+        "ref": "query:card_history(C02354-K2)",
+        "entity_ids": [
+          "C02354-K2"
+        ]
+      },
+      {
+        "claim": "Extensive prior fraud history: 20 confirmed cases including multiple account_takeover episodes (CC-0255 $1,167, CC-0454 $940, CC-1450 $2,351, CC-3085 $2,328, CC-4070 $2,064). Pattern of repeated account compromise.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C02354-K2)",
+        "entity_ids": [
+          "CC-0255",
+          "CC-0454",
+          "CC-1450",
+          "CC-3085",
+          "CC-4070"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0255",
+      "CC-0454",
+      "CC-1450",
+      "CC-3085",
+      "CC-4070"
+    ],
+    "summary": "Customer disputes $39.08 in-person transaction in a familiar region (126, second most common). Amount is low. No device record. Extensive prior fraud history including multiple high-value account-takeover cases. The dispute in a known region on a card with repeated account-takeover history suggests possible card cloning or continued account compromise. Probability 0.55; verification required.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-018"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "Customer confirms they did not make this purchase and still have the physical card."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R2: customer already reported; confirm details and whether card is in possession."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: customer dispute with extensive prior account-takeover history; open case."
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer confirmed denial and has card; suggests card cloning. Exposure $39.08 <= $2,500."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: confirmed unauthorized use."
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R2: advise customer on account security given extensive prior account-takeover history."
+      }
+    ],
+    "what_changed": "Customer confirmed denial and still has the physical card, suggesting card cloning rather than card theft. Block per R2. Exposure below SAR threshold."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R2/3a: exposure $39.08 is well below $1,000 SAR threshold. No shared device or ring connection identified. Case opened internally.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Customer denial confirmed with card in possession. Suggests card cloning. Exposure $39.08 below SAR threshold. Block per R2.",
+  "tool_calls": 5,
+  "tokens": 3800,
+  "latency_s": 7.1
+}

@@ -1,0 +1,21 @@
+TransactionID,TransactionAmt,ProductCD,card1,card6,addr1,addr2,P_emaildomain,R_emaildomain,customer_id,ts,channel,risk_score
+3450629,100.09,R,20749,credit,204.0,87.0,anonymous.com,anonymous.com,C04570,2016-11-11 23:46:24,online,0.57
+3464869,599.94,R,15158,credit,327.0,87.0,anonymous.com,anonymous.com,C03042,2016-11-17 14:03:36,online,0.77
+3476682,482.12,C,13729,debit,264.0,87.0,gmail.com,,C07297,2016-11-21 20:30:00,online,0.25
+3478561,74.96,C,13250,debit,191.0,87.0,yahoo.com,gmail.com,C13487,2016-11-22 16:11:00,online,0.05
+3478782,292.36,C,18586,credit,,,hotmail.com,hotmail.com,C11891,2016-11-22 17:27:07,online,0.79
+3491361,39.08,W,19248,debit,126.0,87.0,,,C02354,2016-11-27 13:41:26,in_person,0.48
+3503878,99.92,R,11539,credit,264.0,87.0,verizon.net,gmail.com,C07987,2016-12-01 17:28:53,online,0.9
+3506725,1000.03,R,17379,credit,469.0,87.0,anonymous.com,anonymous.com,C10434,2016-12-02 15:18:27,online,0.9
+3509359,125.08,R,10010,debit,264.0,87.0,yahoo.com,cox.net,C12265,2016-12-03 06:04:26,online,0.52
+3514030,77.07,W,21139,debit,444.0,87.0,,,C12382,2016-12-04 19:55:28,in_person,0.61
+3514948,111.92,W,15868,debit,264.0,87.0,gmail.com,,C09933,2016-12-05 00:46:14,in_person,0.87
+3523199,100.07,R,22606,credit,330.0,87.0,icloud.com,gmail.com,C02923,2016-12-07 21:38:37,online,0.54
+3526826,35.66,C,22756,debit,,,gmail.com,gmail.com,C07671,2016-12-09 02:39:29,online,0.76
+3530164,49.0,W,19739,credit,330.0,87.0,me.com,,C08623,2016-12-10 13:01:21,in_person,0.4
+3534820,59.67,C,11242,debit,,,hotmail.com,hotmail.com,C09988,2016-12-11 22:39:08,online,0.37
+3553342,30.91,W,12947,debit,494.0,87.0,gmail.com,,C05876,2016-12-18 04:00:31,in_person,0.55
+3558054,55.68,C,10114,credit,,,hotmail.com,hotmail.com,C13171,2016-12-19 22:08:56,online,0.38
+3581141,30.02,S,13026,credit,203.0,87.0,,gmail.com,C08299,2016-12-28 12:10:53,online,0.28
+3583227,128.33,C,21429,debit,,,hotmail.com,hotmail.com,C08106,2016-12-29 01:53:54,online,0.34
+3583368,131.3,C,21363,debit,,,gmail.com,gmail.com,C11923,2016-12-29 03:27:44,online,0.39

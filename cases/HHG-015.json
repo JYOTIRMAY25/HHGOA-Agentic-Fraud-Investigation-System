@@ -1,0 +1,125 @@
+{
+  "case_id": "HHG-015",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.76,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3464869"
+    ],
+    "first_suspicious_txn_id": "3464869",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050"
+    ],
+    "exposure_usd": 599.94,
+    "evidence": [
+      {
+        "claim": "Online $599.94 transaction on 2016-11-17 in billing region 327. Card history top regions are 325, 299, 337, 330, 387; region 327 does not appear. Amount is 4.1x the cardholder's average of $144.57.",
+        "source": "graph",
+        "ref": "query:card_history(C03042-K1)",
+        "entity_ids": [
+          "3464869",
+          "C03042-K1"
+        ]
+      },
+      {
+        "claim": "Identity record: device marked New (id_15=New), Windows 8.1, ie 11.0 for desktop, 1680x1050. New device on a high-value transaction in a new region.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3464869)",
+        "entity_ids": [
+          "3464869"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.77 \u2014 elevated signal, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3464869)",
+        "entity_ids": [
+          "3464869"
+        ]
+      },
+      {
+        "claim": "Prior confirmed CNP-new-device cases: CC-0615 ($174.99) and CC-3886 ($175.05). Both involved new devices. Pattern of repeated compromise via new devices.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C03042-K1)",
+        "entity_ids": [
+          "CC-0615",
+          "CC-3886"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0615",
+      "CC-3886",
+      "CC-1313"
+    ],
+    "summary": "Online $599.94 transaction (4.1x average) from a new device (Windows 8.1, IE 11) in a new billing region. Risk score 0.77. Two prior confirmed CNP-new-device fraud cases on this card. Three independent signals (new device, new region, prior fraud history) raise probability to 0.76. Verification required per R1; exposure $599.94 > $500 triggers R8.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-015"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "Customer states they did not make this purchase and do not own a Windows 8.1 desktop."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.76 with three signals; verify before block."
+      },
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: new device; step-up adds independent confirmation."
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: exposure $599.94 > $500 with uncertain verdict."
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied; exposure $599.94 <= $2,500."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: confirmed unauthorized use."
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R2: exposure $599.94 > $500 and prior confirmed CNP-new-device fraud on same card."
+      }
+    ],
+    "what_changed": "Customer denial confirmed. Probability rises to 0.88. Exposure $599.94 > $500 and prior fraud history trigger FILE_REPORT per R2."
+  },
+  "sar": {
+    "file": true,
+    "reason": "R2: customer denied; new device; new region; exposure $599.94 > $500; two prior confirmed CNP-new-device fraud cases on same card.",
+    "narrative": "On 2016-11-17 at 14:03, card C03042-K1 belonging to customer C03042 was used for an online purchase of $599.94 (product code R) from a device marked New for this account (Windows 8.1, Internet Explorer 11, 1680x1050) in billing region 327, which does not appear in the cardholder's transaction history. The amount is 4.1x the cardholder's average of $144.57. The cardholder denied making this purchase and stated they do not own a Windows 8.1 desktop. Two prior confirmed card-not-present-new-device fraud cases exist on this card: CC-0615 ($174.99) and CC-3886 ($175.05), both involving new devices, indicating a pattern of repeated compromise via new devices. Card blocked and scheduled for reissue.",
+    "subjects": [
+      "C03042",
+      "C03042-K1"
+    ],
+    "total_amount_usd": 599.94,
+    "activity_dates": [
+      "2016-11-17",
+      "2016-11-17"
+    ]
+  },
+  "stop_reason": "Customer denial confirmed. Three independent signals plus denial raise probability to 0.88. Prior fraud history confirms pattern. Block and report follow R2.",
+  "tool_calls": 7,
+  "tokens": 4600,
+  "latency_s": 8.8
+}

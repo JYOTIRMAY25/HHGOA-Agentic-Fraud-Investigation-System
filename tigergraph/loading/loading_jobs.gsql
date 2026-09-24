@@ -1,0 +1,61 @@
+// ========================================================
+// HHGOA TIGERGRAPH AGENTIC FRAUD INVESTIGATION
+// Data Loading Jobs Definition (GSQL)
+// Graph Name: HHGOA_Fraud_Graph
+// Source: docs/TIGERGRAPH_SCHEMA.md & docs/DATASET_AUDIT.md
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE LOADING JOB load_hhgoa_processed FOR GRAPH HHGOA_Fraud_Graph {
+    // Staging / Processed Files
+    DEFINE FILENAME f_cust = "$sys.data_root/data/processed/vertices_customer.csv";
+    DEFINE FILENAME f_card = "$sys.data_root/data/processed/vertices_card.csv";
+    DEFINE FILENAME f_txn = "$sys.data_root/data/processed/vertices_transaction.csv";
+    DEFINE FILENAME f_dev = "$sys.data_root/data/processed/vertices_device_profile.csv";
+    DEFINE FILENAME f_email = "$sys.data_root/data/processed/vertices_email_domain.csv";
+    DEFINE FILENAME f_region = "$sys.data_root/data/processed/vertices_billing_region.csv";
+    DEFINE FILENAME f_case = "$sys.data_root/data/processed/vertices_fraud_case.csv";
+    DEFINE FILENAME f_pattern = "$sys.data_root/data/processed/vertices_fraud_pattern.csv";
+    DEFINE FILENAME f_policy = "$sys.data_root/data/processed/vertices_policy_rule.csv";
+
+    DEFINE FILENAME f_owns = "$sys.data_root/data/processed/edges_owns.csv";
+    DEFINE FILENAME f_performs = "$sys.data_root/data/processed/edges_performs.csv";
+    DEFINE FILENAME f_next_txn = "$sys.data_root/data/processed/edges_next_transaction.csv";
+    DEFINE FILENAME f_used_dev = "$sys.data_root/data/processed/edges_used_device.csv";
+    DEFINE FILENAME f_p_email = "$sys.data_root/data/processed/edges_purchaser_email.csv";
+    DEFINE FILENAME f_r_email = "$sys.data_root/data/processed/edges_recipient_email.csv";
+    DEFINE FILENAME f_billed_in = "$sys.data_root/data/processed/edges_billed_in.csv";
+    DEFINE FILENAME f_inv_txn = "$sys.data_root/data/processed/edges_investigates_txn.csv";
+    DEFINE FILENAME f_tgt_card = "$sys.data_root/data/processed/edges_targets_card.csv";
+    DEFINE FILENAME f_conn_card = "$sys.data_root/data/processed/edges_connects_to_card.csv";
+    DEFINE FILENAME f_inv_cust = "$sys.data_root/data/processed/edges_investigates_customer.csv";
+    DEFINE FILENAME f_exh_pat = "$sys.data_root/data/processed/edges_exhibits_pattern.csv";
+    DEFINE FILENAME f_gov_rule = "$sys.data_root/data/processed/edges_governed_by.csv";
+
+    // 1. VERTEX LOADERS
+    LOAD f_cust TO VERTEX Customer VALUES ($0) USING header="true", separator=",";
+    LOAD f_card TO VERTEX Card VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+    LOAD f_txn TO VERTEX Transaction VALUES ($0, $1, $2, $3, $4, $5, $6, $7, $8) USING header="true", separator=",";
+    LOAD f_dev TO VERTEX DeviceProfile VALUES ($0, $1, $2, $3, $4, $5, $6, $7, $8) USING header="true", separator=",";
+    LOAD f_email TO VERTEX EmailDomain VALUES ($0) USING header="true", separator=",";
+    LOAD f_region TO VERTEX BillingRegion VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+    LOAD f_case TO VERTEX FraudCase VALUES ($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) USING header="true", separator=",";
+    LOAD f_pattern TO VERTEX FraudPattern VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+    LOAD f_policy TO VERTEX PolicyRule VALUES ($0, $1, $2, $3, $4, $5) USING header="true", separator=",";
+
+    // 2. EDGE LOADERS
+    LOAD f_owns TO EDGE OWNS VALUES ($0, $1, $2) USING header="true", separator=",";
+    LOAD f_performs TO EDGE PERFORMS VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_next_txn TO EDGE NEXT_TRANSACTION VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+    LOAD f_used_dev TO EDGE USED_DEVICE VALUES ($0, $1, $2) USING header="true", separator=",";
+    LOAD f_p_email TO EDGE PURCHASER_EMAIL VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_r_email TO EDGE RECIPIENT_EMAIL VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_billed_in TO EDGE BILLED_IN VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_inv_txn TO EDGE INVESTIGATES_TXN VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+    LOAD f_tgt_card TO EDGE TARGETS_CARD VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_conn_card TO EDGE CONNECTS_TO_CARD VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_inv_cust TO EDGE INVESTIGATES_CUSTOMER VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_exh_pat TO EDGE EXHIBITS_PATTERN VALUES ($0, $1) USING header="true", separator=",";
+    LOAD f_gov_rule TO EDGE GOVERNED_BY VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+}

@@ -1,0 +1,117 @@
+{
+  "case_id": "HHG-011",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.75,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3583368"
+    ],
+    "first_suspicious_txn_id": "3583368",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "SM-G610F Build/NRD90M | chrome 66.0 for android"
+    ],
+    "exposure_usd": 131.3,
+    "evidence": [
+      {
+        "claim": "Customer C11923 disputes $131.30 online transaction on 2016-12-29; amount is 3.3x the cardholder's average of $39.45 across 10,361 online transactions.",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3583368",
+          "C11923-K2"
+        ]
+      },
+      {
+        "claim": "Identity record: device marked New (id_15=New), mobile, SM-G610F Build/NRD90M, chrome 66.0 for android. New mobile device on a disputed transaction.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3583368)",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Prior confirmed fraud cases include three card_testing episodes (CC-2247 $4,886, CC-2673 $1,334, CC-4501 $1,508) and multiple card_not_present_new_device cases. Extensive fraud history.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C11923-K2)",
+        "entity_ids": [
+          "CC-2247",
+          "CC-2673",
+          "CC-4501",
+          "CC-0031",
+          "CC-1056"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2247",
+      "CC-2673",
+      "CC-4501",
+      "CC-0031",
+      "CC-3905"
+    ],
+    "summary": "Customer disputes $131.30 online transaction from a new mobile device (SM-G610F, Android, Chrome 66). Amount is 3.3x average. Extensive prior fraud history including card testing and CNP-new-device cases. Three independent signals (new device, amount anomaly, prior fraud history) plus customer dispute raise probability to 0.75.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-011"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 1,
+      "assumed_response": "Customer confirms they did not make this purchase and do not own a Samsung SM-G610F."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R2: customer already reported; confirm details."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: customer dispute with new device and extensive prior fraud history."
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer confirmed denial; exposure $131.30 <= $2,500."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: confirmed unauthorized use."
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R2: prior confirmed fraud on same card; new device links to pattern of repeated CNP-new-device abuse."
+      }
+    ],
+    "what_changed": "Customer confirmed denial and does not own the device. Probability rises to 0.88. Prior fraud history triggers FILE_REPORT per R2."
+  },
+  "sar": {
+    "file": true,
+    "reason": "R2: customer denied; new device; extensive prior confirmed fraud on same card including card testing and CNP-new-device episodes.",
+    "narrative": "On 2016-12-29 at 03:27, card C11923-K2 belonging to customer C11923 was used for an online purchase of $131.30 (product code C) from a mobile device marked New for this account (Samsung SM-G610F Build/NRD90M, Chrome 66 for Android). The amount is 3.3x the cardholder's average of $39.45 across 10,361 prior online transactions. The cardholder denied making this purchase and stated they do not own a Samsung SM-G610F. This card has an extensive history of confirmed fraud including three card-testing episodes (CC-2247 $4,886, CC-2673 $1,334, CC-4501 $1,508) and multiple card-not-present-new-device cases, indicating a pattern of repeated compromise via new devices. Card blocked and scheduled for reissue.",
+    "subjects": [
+      "C11923",
+      "C11923-K2"
+    ],
+    "total_amount_usd": 131.3,
+    "activity_dates": [
+      "2016-12-29",
+      "2016-12-29"
+    ]
+  },
+  "stop_reason": "Customer denial confirmed. Three independent signals plus denial raise probability to 0.88. Extensive prior fraud history confirms pattern. Block and report follow R2.",
+  "tool_calls": 6,
+  "tokens": 4500,
+  "latency_s": 8.5
+}

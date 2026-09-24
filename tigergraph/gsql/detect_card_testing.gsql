@@ -1,0 +1,50 @@
+// ========================================================
+// Query: detect_card_testing
+// Purpose: Sequence analysis of rapid micro-authorizations followed by large charges
+// Vertices: Card, Transaction
+// Edges: PERFORMS, NEXT_TRANSACTION
+// Policy Grounding: Pattern 1 (Card Testing), Rule R5
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY detect_card_testing(
+    STRING target_card_id, 
+    INT window_minutes = 60, 
+    FLOAT micro_threshold = 5.0, 
+    INT min_micro_attempts = 3
+) FOR GRAPH HHGOA_Fraud_Graph {
+    TYPEDEF TUPLE<
+        STRING transaction_id,
+        DATETIME ts,
+        FLOAT amount,
+        STRING channel,
+        INT time_delta_sec
+    > TestingEvent;
+
+    ListAccum<TestingEvent> @@testing_sequence;
+    SumAccum<INT> @@micro_count = 0;
+    SumAccum<FLOAT> @@large_charge = 0.0;
+    OrAccum @@is_card_testing_detected = false;
+
+    StartCard = {Card.*};
+    Source = SELECT c FROM StartCard:c WHERE c.card_id == target_card_id;
+
+    // Get all transactions for card ordered by timestamp
+    AllTxns = SELECT t FROM Source:c -(PERFORMS:e)-> Transaction:t
+        ACCUM
+            CASE WHEN t.amount <= micro_threshold AND t.channel == "online" THEN
+                @@micro_count += 1,
+                @@testing_sequence += TestingEvent(t.transaction_id, t.ts, t.amount, t.channel, 0)
+            WHEN t.amount > micro_threshold AND @@micro_count >= min_micro_attempts THEN
+                @@large_charge += t.amount,
+                @@testing_sequence += TestingEvent(t.transaction_id, t.ts, t.amount, t.channel, 0),
+                @@is_card_testing_detected += true
+            END;
+
+    PRINT target_card_id AS card_id;
+    PRINT @@is_card_testing_detected AS is_card_testing_detected;
+    PRINT @@micro_count AS micro_authorization_count;
+    PRINT @@large_charge AS subsequent_large_charge;
+    PRINT @@testing_sequence AS sequence;
+}

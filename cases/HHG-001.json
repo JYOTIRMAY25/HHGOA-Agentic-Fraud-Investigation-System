@@ -1,0 +1,119 @@
+{
+  "case_id": "HHG-001",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.52,
+    "pattern": "out_of_region_use",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3514030"
+    ],
+    "first_suspicious_txn_id": "3514030",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 77.07,
+    "evidence": [
+      {
+        "claim": "In-person $77.07 transaction in billing region 444 on 2016-12-04; card has 422 transactions with no prior activity in region 444 (top regions: 204, 264, 512, 272, 433).",
+        "source": "graph",
+        "ref": "query:card_history(C12382-K1)",
+        "entity_ids": [
+          "3514030",
+          "C12382-K1"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.61 \u2014 moderate signal, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3514030)",
+        "entity_ids": [
+          "3514030"
+        ]
+      },
+      {
+        "claim": "Prior closed cases CC-1066 and CC-2964 on this card confirmed out_of_region_use fraud; CC-1673 confirmed card_not_present_new_device fraud. Pattern of repeated compromise.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C12382-K1)",
+        "entity_ids": [
+          "CC-1066",
+          "CC-2964",
+          "CC-1673"
+        ]
+      },
+      {
+        "claim": "In-person channel (product W): no device/identity record available for this transaction.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3514030)",
+        "entity_ids": [
+          "3514030"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1066",
+      "CC-2964",
+      "CC-1673",
+      "CC-3587"
+    ],
+    "summary": "In-person $77.07 transaction in billing region 444, which does not appear in this card's 422-transaction history (top regions 204, 264, 512, 272, 433). Model score 0.61 is a moderate signal. Three prior confirmed-fraud cases on this card (out-of-region and CNP-new-device) raise concern. Single signal; verification required before any block per R1.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-001"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "No response received within 24 hours."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single signal (new region) with probability 0.52 < 0.70; verify before any block."
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: raise monitoring sensitivity while verification pending."
+      }
+    ],
+    "final": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: no reply within 24 hours; keep card active under monitoring."
+      },
+      {
+        "action": "DECLINE_TRANSACTION",
+        "route": "L1",
+        "reason": "R4: decline pending authorizations; no reply within 24 hours."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: fraud probability 0.52 and prior confirmed-fraud history warrant opening a case."
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: verdict uncertain, exposure $77.07, prior fraud history on card."
+      }
+    ],
+    "what_changed": "No customer reply within 24 hours triggers R4 monitoring and decline; prior confirmed-fraud history on this card warrants escalation per R8."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R2/3a: fraud not yet confirmed; exposure $77.07 below $1,000 threshold and no shared device link. SAR deferred pending customer response.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Single independent signal (new region) with probability below 0.70; R1 requires verification. No customer reply received; R4 actions applied. Further steps await customer response or analyst review.",
+  "tool_calls": 6,
+  "tokens": 4200,
+  "latency_s": 8.1
+}

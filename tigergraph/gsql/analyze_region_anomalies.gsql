@@ -1,0 +1,34 @@
+// ========================================================
+// Query: analyze_region_anomalies
+// Purpose: Detects out-of-region card spending vs normal multi-day travel
+// Vertices: Card, Transaction, BillingRegion
+// Edges: PERFORMS, BILLED_IN
+// Policy Grounding: Pattern 4 (Out-of-region use), Rules R2, R3
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY analyze_region_anomalies(STRING target_card_id) FOR GRAPH HHGOA_Fraud_Graph {
+    MapAccum<STRING, INT> @@region_frequency;
+    SumAccum<INT> @@total_txns = 0;
+    SumAccum<INT> @@foreign_txns = 0;
+    ListAccum<STRING> @@recent_anomalies;
+
+    StartCard = {Card.*};
+    Source = SELECT c FROM StartCard:c WHERE c.card_id == target_card_id;
+
+    Txns = SELECT t FROM Source:c -(PERFORMS:e)-> Transaction:t;
+    
+    Regions = SELECT r FROM Txns:t -(BILLED_IN:e)-> BillingRegion:r
+        ACCUM
+            @@total_txns += 1,
+            @@region_frequency += (r.region_id -> 1),
+            CASE WHEN r.is_domestic == false THEN
+                @@foreign_txns += 1
+            END;
+
+    PRINT target_card_id AS card_id;
+    PRINT @@total_txns AS total_transactions;
+    PRINT @@region_frequency AS region_distribution;
+    PRINT @@foreign_txns AS international_transaction_count;
+}

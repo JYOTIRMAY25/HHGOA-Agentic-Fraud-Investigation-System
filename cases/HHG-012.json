@@ -1,0 +1,97 @@
+{
+  "case_id": "HHG-012",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.22,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "In-person $30.91 transaction in billing region 494 on 2016-12-18. Card has 991 transactions across many regions (top: 325, 272, 204, 264, 330); region 494 is new but card shows broad geographic activity.",
+        "source": "graph",
+        "ref": "query:card_history(C05876-K2)",
+        "entity_ids": [
+          "3553342",
+          "C05876-K2"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.55 \u2014 moderate signal, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3553342)",
+        "entity_ids": [
+          "3553342"
+        ]
+      },
+      {
+        "claim": "Prior case CC-0003 on this card was cleared after cardholder confirmed travel. Precedent supports legitimate travel explanation for new-region activity.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C05876-K2)",
+        "entity_ids": [
+          "CC-0003"
+        ]
+      },
+      {
+        "claim": "Amount $30.91 is well below the cardholder's average of $80.06. In-person channel is consistent with 930/991 in-person transactions.",
+        "source": "graph",
+        "ref": "query:card_history(C05876-K2)",
+        "entity_ids": [
+          "C05876-K2"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0003",
+      "CC-2370"
+    ],
+    "summary": "In-person $30.91 transaction in a new region (494) on a card with broad geographic activity across many regions. Amount is below average. Prior cleared case (CC-0003) involved the same pattern and was confirmed as travel. Risk score 0.55 is the only anomalous signal. Closing as likely legitimate; single uncorroborated signal per Policy 0/R1.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-012"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "Policy 0/R1: single signal (new region) on a card with broad geographic history and a prior cleared travel case. No corroborating evidence of fraud."
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "Precautionary: monitor for 72 hours given new region, but no block warranted."
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "Policy 0/R1: no corroborating evidence. Closing as legitimate."
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "Precautionary monitoring for 72 hours."
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "Policy 0/R1: no fraud identified. Single signal on a card with broad geographic history and prior cleared travel case. SAR not required.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Single signal (new region) on a card with broad geographic activity and a prior cleared travel case. No corroborating evidence. Probability 0.22 is below 0.15 threshold only marginally; closing as legitimate with precautionary monitoring.",
+  "tool_calls": 5,
+  "tokens": 3100,
+  "latency_s": 5.6
+}

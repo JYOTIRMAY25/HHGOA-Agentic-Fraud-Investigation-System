@@ -1,0 +1,110 @@
+{
+  "case_id": "HHG-005",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.61,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3523199"
+    ],
+    "first_suspicious_txn_id": "3523199",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "iOS Device | iOS 9.3.5 | mobile safari 9.0 | 1024x768"
+    ],
+    "exposure_usd": 100.07,
+    "evidence": [
+      {
+        "claim": "Online $100.07 transaction on 2016-12-07 in region 330 (cardholder's primary region, 87/92 transactions). Region is consistent with cardholder history.",
+        "source": "graph",
+        "ref": "query:card_history(C02923-K1)",
+        "entity_ids": [
+          "3523199",
+          "C02923-K1"
+        ]
+      },
+      {
+        "claim": "Identity record: device marked New (id_15=New), iOS 9.3.5, mobile safari 9.0, screen 1024x768. New mobile device is a corroborating signal even though region is familiar.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3523199)",
+        "entity_ids": [
+          "3523199"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.54 \u2014 moderate signal, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3523199)",
+        "entity_ids": [
+          "3523199"
+        ]
+      },
+      {
+        "claim": "Three prior confirmed account_takeover cases on this card: CC-2400 ($350.99), CC-2717 ($896.08), CC-2857 ($539.97). Repeated credential compromise pattern.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C02923-K1)",
+        "entity_ids": [
+          "CC-2400",
+          "CC-2717",
+          "CC-2857"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2400",
+      "CC-2717",
+      "CC-2857"
+    ],
+    "summary": "Online $100.07 transaction from a new mobile device (iOS 9.3.5, mobile safari) in the cardholder's primary region. Region is consistent but the new device is a corroborating signal. Three prior confirmed account-takeover cases on this card indicate a pattern of credential compromise. Risk score 0.54 is moderate. Probability 0.61; verification required per R1.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-005"
+  },
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 2,
+      "assumed_response": "Customer completes step-up authentication successfully and confirms they made this purchase from a new phone."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: new device signal with probability 0.61 < 0.70; step-up before any block."
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: confirm whether customer recognizes the new device."
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer confirmed the transaction and authenticated successfully."
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R3: advise customer to review account given prior account-takeover history on this card."
+      }
+    ],
+    "what_changed": "Customer passed step-up authentication and confirmed the purchase from a new phone. Probability drops to 0.18. Close as legitimate per R3, but warn customer given prior takeover history."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R3: customer confirmed the transaction via step-up authentication. No fraud; SAR not required.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Customer passed step-up authentication and confirmed the purchase. Verification settled the question per R3. Prior account-takeover history noted in case record for future reference.",
+  "tool_calls": 6,
+  "tokens": 3900,
+  "latency_s": 7.2
+}

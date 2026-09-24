@@ -1,0 +1,53 @@
+// ========================================================
+// Query: trace_connected_entities
+// Purpose: Multi-hop ring & syndicate discovery across shared devices and cards
+// Vertices: Card, Customer, Transaction, DeviceProfile
+// Edges: OWNS, PERFORMS, USED_DEVICE
+// Policy Grounding: Rule R6 (Shared Origin), Rule R10 (Portfolio block protection)
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY trace_connected_entities(STRING target_card_id, INT max_hops = 2) FOR GRAPH HHGOA_Fraud_Graph {
+    TYPEDEF TUPLE<
+        STRING entity_type,
+        STRING entity_id,
+        STRING connection_path,
+        INT hop_distance
+    > ConnectedEntity;
+
+    SetAccum<STRING> @@visited_cards;
+    SetAccum<STRING> @@visited_devices;
+    ListAccum<ConnectedEntity> @@results;
+
+    StartCard = {Card.*};
+    Source = SELECT c FROM StartCard:c WHERE c.card_id == target_card_id
+        ACCUM @@visited_cards += c.card_id;
+
+    // 1. Sibling Cards owned by the same Customer
+    Cust = SELECT u FROM Source:c -(OWNED_BY:e)-> Customer:u;
+    SiblingCards = SELECT sc FROM Cust:u -(OWNS:e)-> Card:sc
+        WHERE sc.card_id != target_card_id
+        ACCUM 
+            @@visited_cards += sc.card_id,
+            @@results += ConnectedEntity("Card", sc.card_id, "SAME_CUSTOMER", 1);
+
+    // 2. Shared Devices used by target card
+    Txns = SELECT t FROM Source:c -(PERFORMS:e)-> Transaction:t;
+    Devices = SELECT d FROM Txns:t -(USED_DEVICE:e)-> DeviceProfile:d
+        ACCUM 
+            @@visited_devices += d.device_profile_id,
+            @@results += ConnectedEntity("DeviceProfile", d.device_profile_id, "USED_DEVICE", 1);
+
+    // 3. Other Cards sharing these exact devices (Fraud Rings / Syndicates)
+    OtherTxns = SELECT ot FROM Devices:d -(USED_IN_TXN:e)-> Transaction:ot;
+    OtherCards = SELECT oc FROM OtherTxns:ot -(PERFORMED_BY:e)-> Card:oc
+        WHERE NOT @@visited_cards.contains(oc.card_id)
+        ACCUM 
+            @@visited_cards += oc.card_id,
+            @@results += ConnectedEntity("Card", oc.card_id, "SHARED_DEVICE_SYNDICATE", 2);
+
+    PRINT @@results AS connected_entities;
+    PRINT @@visited_cards.size() AS total_connected_cards;
+    PRINT @@visited_devices.size() AS total_shared_devices;
+}

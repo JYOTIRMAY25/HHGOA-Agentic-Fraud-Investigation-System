@@ -1,0 +1,100 @@
+{
+  "case_id": "HHG-009",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.58,
+    "pattern": "out_of_region_use",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3581141"
+    ],
+    "first_suspicious_txn_id": "3581141",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 30.02,
+    "evidence": [
+      {
+        "claim": "Customer C08299 disputes $30.02 online transaction on 2016-12-28 in billing region 203. Card history shows top regions 330 (33 txns) and 204 (11 txns); region 203 does not appear in history.",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3581141",
+          "C08299-K1"
+        ]
+      },
+      {
+        "claim": "Identity record: device marked Found (id_15=Found) \u2014 known device. No browser or OS data available.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3581141)",
+        "entity_ids": [
+          "3581141"
+        ]
+      },
+      {
+        "claim": "Product code S is consistent with cardholder history (49 of 56 transactions). Amount $30.02 is below average of $61.17.",
+        "source": "graph",
+        "ref": "query:card_history(C08299-K1)",
+        "entity_ids": [
+          "C08299-K1"
+        ]
+      },
+      {
+        "claim": "No prior closed cases found for customer C08299.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C08299-K1)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Customer disputes $30.02 online transaction in region 203, which does not appear in this card's history (primary regions 330 and 204). Device is known. Product and amount are consistent with cardholder history. New region plus customer dispute are the two signals. No prior fraud history. Probability 0.58.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-009"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 1,
+      "assumed_response": "Customer confirms they did not make this purchase and have not been to region 203."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R2: customer already reported; confirm details."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: customer dispute with new region signal; open case."
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer confirmed denial; exposure $30.02 <= $2,500."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: confirmed unauthorized use."
+      }
+    ],
+    "what_changed": "Customer confirmed denial and has not visited region 203. Probability rises to 0.80. Block per R2. Exposure $30.02 well below SAR threshold."
+  },
+  "sar": {
+    "file": false,
+    "reason": "R2/3a: exposure $30.02 is well below $1,000 SAR threshold. No shared device or ring connection. Case opened internally.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Customer denial confirmed. New region plus denial provide two independent signals. Exposure $30.02 below SAR threshold. Block per R2.",
+  "tool_calls": 5,
+  "tokens": 3400,
+  "latency_s": 6.5
+}

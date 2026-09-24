@@ -1,0 +1,116 @@
+{
+  "case_id": "HHG-010",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.71,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3506725"
+    ],
+    "first_suspicious_txn_id": "3506725",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "Windows | Windows 10 | edge 16.0 | 1366x768"
+    ],
+    "exposure_usd": 1000.03,
+    "evidence": [
+      {
+        "claim": "Online $1,000.03 transaction on 2016-12-02 in region 469 (cardholder's primary region, 27/36 transactions). Amount is 6.5x the cardholder's average of $153.87.",
+        "source": "graph",
+        "ref": "query:card_history(C10434-K1)",
+        "entity_ids": [
+          "3506725",
+          "C10434-K1"
+        ]
+      },
+      {
+        "claim": "Identity record: device marked New (id_15=New), Windows 10, edge 16.0, 1366x768. New device on a high-value transaction is a strong corroborating signal.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3506725)",
+        "entity_ids": [
+          "3506725"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.90 \u2014 highly elevated signal, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3506725)",
+        "entity_ids": [
+          "3506725"
+        ]
+      },
+      {
+        "claim": "Prior case CC-0873 on this card was cleared (false alarm). Cleared precedent slightly reduces confidence but does not override current signals.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C10434-K1)",
+        "entity_ids": [
+          "CC-0873"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0873"
+    ],
+    "summary": "Online $1,000.03 transaction (6.5x average) from a new device (Windows 10, Edge 16) in the cardholder's primary region. Risk score 0.90. Prior case on this card was cleared. Two independent signals (new device + amount anomaly) with high risk score raise probability to 0.71. Verification required before blocking per R1; exposure exceeds $500 so escalation applies per R8.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-010"
+  },
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 2,
+      "assumed_response": "Customer does not complete step-up authentication within 24 hours."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: new device with probability 0.71; step-up before any block."
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: confirm whether customer recognizes the new device and the $1,000 charge."
+      }
+    ],
+    "final": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: no step-up response within 24 hours; keep card active under monitoring."
+      },
+      {
+        "action": "DECLINE_TRANSACTION",
+        "route": "L1",
+        "reason": "R4: decline pending authorizations; no reply within 24 hours."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: exposure $1,000.03 and new device warrant opening a case."
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: verdict uncertain, exposure $1,000.03 > $500, no customer response."
+      }
+    ],
+    "what_changed": "No step-up response within 24 hours triggers R4 monitoring and decline. Exposure $1,000.03 > $500 triggers R8 escalation."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud not yet confirmed; customer has not responded. SAR deferred pending analyst review and customer response. Will file if fraud confirmed.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "No customer response to step-up authentication within 24 hours. Verdict remains uncertain. R4 and R8 actions applied. Analyst escalation required before further action.",
+  "tool_calls": 6,
+  "tokens": 4400,
+  "latency_s": 8.3
+}

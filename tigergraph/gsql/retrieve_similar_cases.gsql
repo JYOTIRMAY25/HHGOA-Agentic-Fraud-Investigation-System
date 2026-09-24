@@ -1,0 +1,75 @@
+// ========================================================
+// Query: retrieve_similar_cases
+// Purpose: Case Memory retrieval of historical closed investigations for customer/card/pattern
+// Vertices: Customer, Card, FraudPattern, FraudCase
+// Edges: INVESTIGATES_CUSTOMER, TARGETS_CARD, EXHIBITS_PATTERN
+// Policy Grounding: Case Memory, Precedent Reasoning, GraphRAG
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY retrieve_similar_cases(
+    STRING customer_id, 
+    STRING card_id, 
+    STRING pattern_id
+) FOR GRAPH HHGOA_Fraud_Graph {
+    TYPEDEF TUPLE<
+        STRING case_id,
+        STRING status,
+        STRING outcome,
+        STRING pattern,
+        FLOAT exposure_usd,
+        BOOL report_filed,
+        STRING actions_taken,
+        STRING analyst_notes,
+        STRING match_reason
+    > CaseRecord;
+
+    ListAccum<CaseRecord> @@precedents;
+    SetAccum<STRING> @@seen_cases;
+
+    // 1. Prior cases on the same customer
+    StartCust = {Customer.*};
+    TargetCust = SELECT u FROM StartCust:u WHERE u.customer_id == customer_id;
+    CustCases = SELECT ca FROM TargetCust:u -(CUSTOMER_CASES:e)-> FraudCase:ca
+        ACCUM
+            IF NOT @@seen_cases.contains(ca.case_id) THEN
+                @@seen_cases += ca.case_id,
+                @@precedents += CaseRecord(
+                    ca.case_id, ca.status, ca.outcome, ca.pattern, ca.exposure_usd, 
+                    ca.report_filed, ca.actions_taken, ca.analyst_notes, "SAME_CUSTOMER_PRECEDENT"
+                )
+            END;
+
+    // 2. Prior cases on the same card
+    StartCard = {Card.*};
+    TargetCard = SELECT c FROM StartCard:c WHERE c.card_id == card_id;
+    CardCases = SELECT ca FROM TargetCard:c -(HAS_CASES:e)-> FraudCase:ca
+        ACCUM
+            IF NOT @@seen_cases.contains(ca.case_id) THEN
+                @@seen_cases += ca.case_id,
+                @@precedents += CaseRecord(
+                    ca.case_id, ca.status, ca.outcome, ca.pattern, ca.exposure_usd, 
+                    ca.report_filed, ca.actions_taken, ca.analyst_notes, "SAME_CARD_PRECEDENT"
+                )
+            END;
+
+    // 3. Typology-matched cases
+    IF pattern_id != "" THEN
+        StartPat = {FraudPattern.*};
+        TargetPat = SELECT p FROM StartPat:p WHERE p.pattern_id == pattern_id;
+        PatCases = SELECT ca FROM TargetPat:p -(CASES_WITH_PATTERN:e)-> FraudCase:ca
+            LIMIT 5
+            ACCUM
+                IF NOT @@seen_cases.contains(ca.case_id) THEN
+                    @@seen_cases += ca.case_id,
+                    @@precedents += CaseRecord(
+                        ca.case_id, ca.status, ca.outcome, ca.pattern, ca.exposure_usd, 
+                        ca.report_filed, ca.actions_taken, ca.analyst_notes, "TYPOLOGY_MATCH"
+                    )
+                END;
+    END;
+
+    PRINT @@precedents AS similar_cases;
+    PRINT @@precedents.size() AS precedent_count;
+}

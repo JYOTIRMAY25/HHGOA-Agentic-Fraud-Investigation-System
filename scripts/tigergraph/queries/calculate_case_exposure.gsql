@@ -1,0 +1,38 @@
+// ========================================================
+// Query: calculate_case_exposure
+// Purpose: Aggregates total USD exposure of fraudulent transactions linked to a case
+// Vertices: FraudCase, Transaction
+// Edges: INVESTIGATES_TXN
+// Policy Grounding: Section 4 (Exposure), Approval Routing (L1 <= $2,500, L2 > $2,500)
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY calculate_case_exposure(STRING target_case_id) FOR GRAPH HHGOA_Fraud_Graph {
+    SumAccum<FLOAT> @@total_exposure_usd = 0.0;
+    SumAccum<INT> @@fraud_txn_count = 0;
+    ListAccum<STRING> @@fraud_txn_ids;
+
+    StartCase = {FraudCase.*};
+    Source = SELECT ca FROM StartCase:ca WHERE ca.case_id == target_case_id;
+
+    Txns = SELECT t FROM Source:ca -(INVESTIGATES_TXN:e)-> Transaction:t
+        WHERE e.is_confirmed_fraud == true OR e.is_flagged_trigger == true
+        ACCUM
+            @@total_exposure_usd += t.amount,
+            @@fraud_txn_count += 1,
+            @@fraud_txn_ids += t.transaction_id;
+
+    STRING approval_route = "auto";
+    IF @@total_exposure_usd > 2500.0 THEN
+        approval_route = "L2";
+    ELSE IF @@total_exposure_usd > 0.0 THEN
+        approval_route = "L1";
+    END;
+
+    PRINT target_case_id AS case_id;
+    PRINT @@total_exposure_usd AS total_exposure_usd;
+    PRINT @@fraud_txn_count AS fraud_transaction_count;
+    PRINT @@fraud_txn_ids AS transaction_ids;
+    PRINT approval_route AS required_approval_route;
+}

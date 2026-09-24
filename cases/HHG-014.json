@@ -1,0 +1,138 @@
+{
+  "case_id": "HHG-014",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.73,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478561"
+    ],
+    "first_suspicious_txn_id": "3478561",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080"
+    ],
+    "exposure_usd": 74.96,
+    "evidence": [
+      {
+        "claim": "Analyst flags that several cards this month show purchases from the same unusual device profile. Transaction 3478561 on C13487-K1 is one such transaction.",
+        "source": "graph",
+        "ref": "trigger:analyst_request",
+        "entity_ids": [
+          "3478561",
+          "C13487-K1"
+        ]
+      },
+      {
+        "claim": "Identity record: device marked New (id_15=New), anonymous proxy (id_23=IP_PROXY:ANONYMOUS), Android 7.0, SM-G935F Build/NRD90M, chrome 62.0 for android, 1920x1080. Anonymous proxy behind a new device is a strong signal.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3478561)",
+        "entity_ids": [
+          "3478561"
+        ]
+      },
+      {
+        "claim": "Card history: 85 transactions, 81 in-person, only 4 online. This online transaction is inconsistent with the cardholder's predominantly in-person behavior.",
+        "source": "graph",
+        "ref": "query:card_history(C13487-K1)",
+        "entity_ids": [
+          "C13487-K1"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.05 \u2014 very low, but analyst trigger overrides score-based filtering. Score is an input, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3478561)",
+        "entity_ids": [
+          "3478561"
+        ]
+      },
+      {
+        "claim": "No prior closed cases for C13487. Device profile SM-G935F Build/NRD90M with anonymous proxy should be cross-referenced against other cards flagged by analyst.",
+        "source": "graph",
+        "ref": "query:trace_connected_entities(C13487-K1)",
+        "entity_ids": [
+          "C13487-K1"
+        ]
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Analyst-triggered investigation of a device profile shared across multiple cards. Transaction uses an anonymous proxy behind a new device (SM-G935F, Android 7.0) on a card that is 95% in-person. Risk score is low (0.05) but the analyst trigger and proxy signal override score-based filtering. Probability 0.73 based on device and channel anomalies. R6 shared-origin investigation required.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-014"
+  },
+  "evidence_requests": [
+    {
+      "type": "analyst_info",
+      "asked_after_step": 3,
+      "assumed_response": "Analyst confirms the SM-G935F Build/NRD90M device profile with anonymous proxy appears on at least 2 other cards in November 2016."
+    },
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer states they did not make this online purchase and do not own an Android phone."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.73 on device/proxy signals; verify before block."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R6: analyst-flagged shared device profile; open case immediately."
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: monitor all cards sharing the SM-G935F anonymous-proxy device profile."
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied; exposure $74.96 <= $2,500."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R6: confirmed shared device across multiple cards."
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R6: shared anonymous-proxy device profile links this to coordinated activity across multiple cardholders."
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: monitor all cards sharing the SM-G935F Build/NRD90M anonymous-proxy device profile."
+      }
+    ],
+    "what_changed": "Analyst confirmed shared device across 2+ other cards. Customer denied the transaction. Shared anonymous-proxy device profile triggers R6 FILE_REPORT and MONITOR_CONNECTED_CARDS."
+  },
+  "sar": {
+    "file": true,
+    "reason": "R6: shared anonymous-proxy device profile (SM-G935F Build/NRD90M, Android 7.0, chrome 62.0, 1920x1080) links this transaction to coordinated activity across multiple cardholders in November 2016.",
+    "narrative": "On 2016-11-22 at 16:11, card C13487-K1 belonging to customer C13487 was used for an online purchase of $74.96 (product code C) from a device marked New for this account (Samsung SM-G935F Build/NRD90M, Android 7.0, Chrome 62.0 for Android, 1920x1080) operating behind an anonymous proxy (id_23=IP_PROXY:ANONYMOUS). The cardholder has 85 transactions on record, of which only 4 are online; this transaction is inconsistent with the cardholder's predominantly in-person behavior. The cardholder denied making this purchase. An analyst investigation identified this device profile as appearing on at least two other cards in November 2016, indicating coordinated use of a single device or device profile across multiple cardholders. The anonymous proxy obscures the true origin of the transactions. The combination of a shared anonymous-proxy device, new-device status, channel anomaly, and customer denial across multiple accounts constitutes a suspicious activity pattern consistent with a card-not-present fraud ring. Card blocked and scheduled for reissue; connected cards placed under monitoring.",
+    "subjects": [
+      "C13487",
+      "C13487-K1"
+    ],
+    "total_amount_usd": 74.96,
+    "activity_dates": [
+      "2016-11-22",
+      "2016-11-22"
+    ]
+  },
+  "stop_reason": "Analyst confirmed shared device across multiple cards. Customer denied the transaction. Anonymous proxy plus shared device profile triggers R6. Block, report, and monitoring of connected cards follow.",
+  "tool_calls": 8,
+  "tokens": 5200,
+  "latency_s": 10.1
+}

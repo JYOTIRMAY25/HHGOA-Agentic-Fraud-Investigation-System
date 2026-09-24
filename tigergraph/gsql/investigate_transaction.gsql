@@ -1,0 +1,85 @@
+// ========================================================
+// Query: investigate_transaction
+// Purpose: 360-Degree investigation context for a flagged transaction
+// Vertices: Transaction, Card, Customer, DeviceProfile, EmailDomain, BillingRegion, FraudCase
+// Edges: PERFORMS, OWNS, USED_DEVICE, PURCHASER_EMAIL, RECIPIENT_EMAIL, BILLED_IN, INVESTIGATES_TXN
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY investigate_transaction(STRING txn_id) FOR GRAPH HHGOA_Fraud_Graph {
+    TYPEDEF TUPLE<
+        STRING transaction_id,
+        DATETIME ts,
+        FLOAT amount,
+        STRING channel,
+        STRING product_cd,
+        FLOAT risk_score,
+        BOOL is_flagged
+    > TxnSummary;
+
+    TYPEDEF TUPLE<
+        STRING card_id,
+        STRING customer_id,
+        STRING network,
+        STRING card_type
+    > CardSummary;
+
+    TYPEDEF TUPLE<
+        STRING device_profile_id,
+        STRING device_info,
+        STRING device_type,
+        STRING os,
+        STRING browser,
+        STRING device_status,
+        STRING proxy_flag
+    > DeviceSummary;
+
+    ListAccum<TxnSummary> @@txn_details;
+    ListAccum<CardSummary> @@card_details;
+    ListAccum<DeviceSummary> @@device_details;
+    SetAccum<STRING> @@purchaser_emails;
+    SetAccum<STRING> @@recipient_emails;
+    SetAccum<STRING> @@billing_regions;
+    SetAccum<STRING> @@prior_cases;
+
+    Start = {Transaction.*};
+    TargetTxn = SELECT t FROM Start:t WHERE t.transaction_id == txn_id
+        ACCUM @@txn_details += TxnSummary(
+            t.transaction_id, t.ts, t.amount, t.channel, t.product_cd, t.risk_score, t.is_flagged
+        );
+
+    // 1. Traverse to Card and Customer
+    Cards = SELECT c FROM TargetTxn:t -(PERFORMED_BY:e)-> Card:c;
+    Custs = SELECT cu FROM Cards:c -(OWNED_BY:e)-> Customer:cu
+        ACCUM @@card_details += CardSummary(c.card_id, cu.customer_id, c.network, c.card_type);
+
+    // 2. Traverse to DeviceProfile
+    Devices = SELECT d FROM TargetTxn:t -(USED_DEVICE:e)-> DeviceProfile:d
+        ACCUM @@device_details += DeviceSummary(
+            d.device_profile_id, d.device_info, d.device_type, d.os, d.browser, d.device_status, d.proxy_flag
+        );
+
+    // 3. Traverse to Email Domains
+    PEmails = SELECT em FROM TargetTxn:t -(PURCHASER_EMAIL:e)-> EmailDomain:em
+        ACCUM @@purchaser_emails += em.domain_name;
+
+    REmails = SELECT em FROM TargetTxn:t -(RECIPIENT_EMAIL:e)-> EmailDomain:em
+        ACCUM @@recipient_emails += em.domain_name;
+
+    // 4. Traverse to Billing Region
+    Regions = SELECT r FROM TargetTxn:t -(BILLED_IN:e)-> BillingRegion:r
+        ACCUM @@billing_regions += r.region_id;
+
+    // 5. Traverse to Prior/Active Cases
+    Cases = SELECT ca FROM TargetTxn:t -(INVOLVED_IN_CASE:e)-> FraudCase:ca
+        ACCUM @@prior_cases += ca.case_id;
+
+    PRINT @@txn_details AS transaction;
+    PRINT @@card_details AS card_and_customer;
+    PRINT @@device_details AS device_profile;
+    PRINT @@purchaser_emails AS purchaser_emails;
+    PRINT @@recipient_emails AS recipient_emails;
+    PRINT @@billing_regions AS billing_regions;
+    PRINT @@prior_cases AS associated_cases;
+}

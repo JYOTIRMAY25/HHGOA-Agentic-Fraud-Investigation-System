@@ -1,0 +1,115 @@
+{
+  "case_id": "HHG-002",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.58,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478782"
+    ],
+    "first_suspicious_txn_id": "3478782",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 292.36,
+    "evidence": [
+      {
+        "claim": "Online $292.36 transaction on 2016-11-22; card history shows 44 online transactions averaging $47.46 \u2014 this amount is 6x the cardholder's average.",
+        "source": "graph",
+        "ref": "query:card_history(C11891-K1)",
+        "entity_ids": [
+          "3478782",
+          "C11891-K1"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.79 \u2014 elevated signal, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3478782)",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "No identity record in identity.csv for transaction 3478782; device/proxy signals unavailable.",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3478782)",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "Prior closed case CC-4160 on this card confirmed card_not_present_fraud (exposure $90.54).",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C11891-K1)",
+        "entity_ids": [
+          "CC-4160"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-4160"
+    ],
+    "summary": "Online $292.36 transaction is 6x this cardholder's average of $47.46 across 44 prior online transactions. Model score 0.79 is elevated. No identity record available. Prior confirmed CNP fraud on this card. Two independent signals (amount anomaly + prior fraud history) place probability at 0.58; verification required before blocking per R1.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-002"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "Customer states they did not make this purchase."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.58 < 0.70; verify before any block."
+      },
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: step-up adds independent confirmation signal."
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied transaction; exposure $292.36 <= $2,500."
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denial confirms fraud; open internal case."
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R2: confirmed unauthorized use; prior fraud history on same card."
+      }
+    ],
+    "what_changed": "Customer denial raised probability to 0.82 and confirmed the block. Prior fraud history on this card triggers FILE_REPORT per R2."
+  },
+  "sar": {
+    "file": true,
+    "reason": "R2: customer denied the transaction; prior confirmed CNP fraud on same card; exposure $292.36.",
+    "narrative": "On 2016-11-22 at 17:27, card C11891-K1 belonging to customer C11891 was used for an online purchase of $292.36 (product code C), approximately 6x the cardholder's historical average of $47.46 across 44 prior online transactions. No identity record was available for this transaction. The cardholder, when contacted, stated they did not make this purchase. A prior confirmed card-not-present fraud case (CC-4160, $90.54) exists on this same card, indicating a pattern of repeated unauthorized use. The combination of an anomalous amount, customer denial, and prior confirmed fraud on the same card constitutes strong grounds for a suspicious activity report. Card blocked and scheduled for reissue.",
+    "subjects": [
+      "C11891",
+      "C11891-K1"
+    ],
+    "total_amount_usd": 292.36,
+    "activity_dates": [
+      "2016-11-22",
+      "2016-11-22"
+    ]
+  },
+  "stop_reason": "Customer denial settled the verdict. Two independent signals (amount anomaly, prior fraud history) plus denial raise probability to 0.82. Block and report actions follow R2.",
+  "tool_calls": 5,
+  "tokens": 3800,
+  "latency_s": 7.4
+}

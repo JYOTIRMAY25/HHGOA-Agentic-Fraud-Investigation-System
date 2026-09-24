@@ -1,0 +1,88 @@
+{
+  "case_id": "HHG-007",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.12,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "In-person $111.92 transaction in billing region 264 on 2016-12-05. Region 264 is this cardholder's primary region (2,552 of 2,792 transactions). Amount is consistent with average of $123.85.",
+        "source": "graph",
+        "ref": "query:card_history(C09933-K2)",
+        "entity_ids": [
+          "3514948",
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Product code W (in-person) matches cardholder's dominant channel (2,549 of 2,792 transactions are in-person product W).",
+        "source": "graph",
+        "ref": "query:card_history(C09933-K2)",
+        "entity_ids": [
+          "C09933-K2"
+        ]
+      },
+      {
+        "claim": "Model risk score 0.87 is elevated but the transaction is fully consistent with cardholder's established pattern. Score is an input, not a verdict (Policy 0).",
+        "source": "graph",
+        "ref": "query:investigate_transaction(3514948)",
+        "entity_ids": [
+          "3514948"
+        ]
+      },
+      {
+        "claim": "Prior fraud cases on this card are predominantly out-of-region or account-takeover; none involve in-person transactions in region 264.",
+        "source": "graph",
+        "ref": "query:retrieve_similar_cases(C09933-K2)",
+        "entity_ids": [
+          "CC-0104",
+          "CC-0765"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0104",
+      "CC-0657"
+    ],
+    "summary": "High model score (0.87) on an in-person $111.92 transaction in the cardholder's primary region (264), using the cardholder's dominant channel and product code. Transaction is fully consistent with 2,792-transaction history. Risk score is the only anomalous signal; no independent corroboration exists. Closing as legitimate per Policy 0 and R1.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-007"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "Policy 0/R1: risk score is the only signal; transaction is fully consistent with cardholder history. No corroborating evidence of fraud."
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "Policy 0/R1: no corroborating evidence. Closing as legitimate."
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "R3/Policy 0: transaction is consistent with cardholder history; no fraud identified. SAR not required.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Risk score is the only signal; transaction matches cardholder's primary region, channel, and amount profile. Two independent pieces of evidence (region match, channel match) confirm legitimacy. Probability 0.12 is below 0.15 threshold; closing per Policy 6.",
+  "tool_calls": 5,
+  "tokens": 3200,
+  "latency_s": 5.8
+}

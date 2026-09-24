@@ -1,0 +1,38 @@
+// ========================================================
+// Query: validation_queries
+// Purpose: Validates vertex and edge counts against documented dataset audit metrics
+// ========================================================
+
+USE GRAPH HHGOA_Fraud_Graph
+
+CREATE OR REPLACE QUERY validate_graph_metrics() FOR GRAPH HHGOA_Fraud_Graph {
+    SumAccum<INT> @@cust_count = 0;
+    SumAccum<INT> @@card_count = 0;
+    SumAccum<INT> @@txn_count = 0;
+    SumAccum<INT> @@dev_count = 0;
+    SumAccum<INT> @@email_count = 0;
+    SumAccum<INT> @@region_count = 0;
+    SumAccum<INT> @@case_count = 0;
+    SumAccum<INT> @@pattern_count = 0;
+    SumAccum<INT> @@rule_count = 0;
+
+    AllCust = SELECT c FROM Customer:c ACCUM @@cust_count += 1;
+    AllCard = SELECT c FROM Card:c ACCUM @@card_count += 1;
+    AllTxn = SELECT t FROM Transaction:t ACCUM @@txn_count += 1;
+    AllDev = SELECT d FROM DeviceProfile:d ACCUM @@dev_count += 1;
+    AllEmail = SELECT e FROM EmailDomain:e ACCUM @@email_count += 1;
+    AllRegion = SELECT r FROM BillingRegion:r ACCUM @@region_count += 1;
+    AllCase = SELECT ca FROM FraudCase:ca ACCUM @@case_count += 1;
+    AllPat = SELECT p FROM FraudPattern:p ACCUM @@pattern_count += 1;
+    AllRule = SELECT ru FROM PolicyRule:ru ACCUM @@rule_count += 1;
+
+    PRINT @@cust_count AS customer_count;
+    PRINT @@card_count AS card_count;
+    PRINT @@txn_count AS transaction_count;
+    PRINT @@dev_count AS device_profile_count;
+    PRINT @@email_count AS email_domain_count;
+    PRINT @@region_count AS billing_region_count;
+    PRINT @@case_count AS fraud_case_count;
+    PRINT @@pattern_count AS fraud_pattern_count;
+    PRINT @@rule_count AS policy_rule_count;
+}
