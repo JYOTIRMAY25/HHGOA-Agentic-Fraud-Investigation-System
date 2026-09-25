@@ -330,6 +330,63 @@ function ResultDashboard({ data }: { data: InvestigationResult }) {
 }
 
 // ---------------------------------------------------------------------------
+// Demo Investigations panel
+// ---------------------------------------------------------------------------
+function DemoInvestigations({ onRun }: { onRun: (txnId: string) => void }) {
+  const demos = [
+    {
+      id: 'HHG-007',
+      txnId: '3514948',
+      title: 'High Risk / Legitimate',
+      description: 'High risk score but evidence supports legitimate activity',
+      detail: 'Demonstrates that high risk does not automatically mean fraud',
+    },
+    {
+      id: 'HHG-014',
+      txnId: '3478561',
+      title: 'Shared Device Investigation',
+      description: 'Connected entities, shared device and proxy signals',
+      detail: 'Demonstrates TigerGraph relationship/connected-entity investigation',
+    },
+    {
+      id: 'HHG-010',
+      txnId: '3506725',
+      title: 'High Value / No Response',
+      description: 'Policy, SAR and next-best-action scenario',
+      detail: 'Demonstrates policy evaluation, approval route, SAR decision',
+    },
+  ];
+
+  return (
+    <div className="mb-10">
+      <h2 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-4">Demo Investigations</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {demos.map((demo) => (
+          <button
+            key={demo.id}
+            type="button"
+            onClick={() => onRun(demo.txnId)}
+            className="group p-4 rounded-lg border border-border-default bg-bg-secondary hover:border-accent-blue/50 hover:bg-accent-blue/5 transition-all text-left"
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <span className="text-xs font-bold text-accent-blue bg-accent-blue/10 px-2 py-1 rounded">{demo.id}</span>
+              <span className="text-[10px] font-mono text-text-tertiary bg-bg-tertiary px-1.5 py-0.5 rounded">Benchmark</span>
+            </div>
+            <h3 className="text-sm font-bold text-text-primary group-hover:text-accent-blue transition-colors">{demo.title}</h3>
+            <p className="text-xs text-text-secondary mt-1">{demo.description}</p>
+            <p className="text-[10px] text-text-tertiary mt-2 opacity-70">{demo.detail}</p>
+            <div className="mt-3 pt-3 border-t border-border-default flex items-center justify-between">
+              <span className="text-xs font-mono text-text-tertiary">Txn: {demo.txnId}</span>
+              <span className="text-xs font-bold text-accent-blue group-hover:underline">Run Investigation →</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 export default function InvestigationPage() {
@@ -421,6 +478,9 @@ export default function InvestigationPage() {
           </div>
           <p className="text-xs text-text-tertiary mt-2">Demo: try <button onClick={() => setTxnId('3514030')} className="text-accent-blue hover:underline">3514030</button></p>
         </div>
+
+        {/* Demo Investigations */}
+        <DemoInvestigations onRun={setTxnId} />
 
         {/* States */}
         {loading && <LoadingOverlay step={loadStep} />}
