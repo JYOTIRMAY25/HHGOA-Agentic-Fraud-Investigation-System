@@ -180,6 +180,36 @@ class TigerGraphConnectionManager:
                 {"@@billing_regions": ["R_315_87"]},
                 {"@@prior_cases": ["HHG-001"]},
             ]
+        if txn_id == "3514948":  # HHG-007
+            return [
+                {"@@txn_details": [{"transaction_id": "3514948", "ts": "2016-12-05 14:30:00", "amount": 111.92, "channel": "in_person", "product_cd": "W", "risk_score": 0.87, "is_flagged": True}]},
+                {"@@card_details": [{"card_id": "C09933-K2", "customer_id": "C09933", "network": "mastercard", "card_type": "credit"}]},
+                {"@@device_details": []},
+                {"@@purchaser_emails": ["customer@example.com"]},
+                {"@@recipient_emails": []},
+                {"@@billing_regions": ["R_264_87"]},
+                {"@@prior_cases": ["HHG-007"]},
+            ]
+        if txn_id == "3478561":  # HHG-014
+            return [
+                {"@@txn_details": [{"transaction_id": "3478561", "ts": "2016-11-22 16:11:00", "amount": 74.96, "channel": "online", "product_cd": "C", "risk_score": 0.05, "is_flagged": True}]},
+                {"@@card_details": [{"card_id": "C13487-K1", "customer_id": "C13487", "network": "visa", "card_type": "credit"}]},
+                {"@@device_details": [{"device_type": "mobile", "device_info": "SM-G935F Build/NRD90M", "os": "Android 7.0", "browser": "chrome 62.0 for android", "screen": "1920x1080", "device_status": "New", "proxy_flag": "IP_PROXY:ANONYMOUS"}]},
+                {"@@purchaser_emails": ["shopper@email.com"]},
+                {"@@recipient_emails": ["merchant@store.com"]},
+                {"@@billing_regions": ["R_142_87"]},
+                {"@@prior_cases": []},
+            ]
+        if txn_id == "3506725":  # HHG-010
+            return [
+                {"@@txn_details": [{"transaction_id": "3506725", "ts": "2016-12-02 09:45:00", "amount": 1000.03, "channel": "online", "product_cd": "C", "risk_score": 0.90, "is_flagged": True}]},
+                {"@@card_details": [{"card_id": "C10434-K1", "customer_id": "C10434", "network": "visa", "card_type": "credit"}]},
+                {"@@device_details": [{"device_type": "desktop", "device_info": "Windows", "os": "Windows 10", "browser": "edge 16.0", "screen": "1366x768", "device_status": "New", "proxy_flag": "IP_PROXY:TRANSPARENT"}]},
+                {"@@purchaser_emails": ["cardholder@domain.com"]},
+                {"@@recipient_emails": ["merchant@site.com"]},
+                {"@@billing_regions": ["R_469_87"]},
+                {"@@prior_cases": ["HHG-010"]},
+            ]
         return [{"@@txn_details": []}]
 
     def _fixture_trace_connected_entities(self, params: Dict[str, Any]) -> List[dict]:
@@ -194,25 +224,85 @@ class TigerGraphConnectionManager:
                 {"total_connected_cards": 2},
                 {"total_shared_devices": 1},
             ]
+        if card_id == "C13487-K1":  # HHG-014 - shared device across cards
+            return [
+                {"@@results": [
+                    {"entity_type": "Card", "entity_id": "C13487-K1", "connection_path": "SAME_CUSTOMER", "hop_distance": 0},
+                    {"entity_type": "DeviceProfile", "entity_id": "DEV_SM_G935F_ANON", "connection_path": "USED_DEVICE", "hop_distance": 1},
+                    {"entity_type": "Card", "entity_id": "C13487-K2", "connection_path": "SHARED_DEVICE_SYNDICATE", "hop_distance": 2},
+                    {"entity_type": "Card", "entity_id": "C13487-K3", "connection_path": "SHARED_DEVICE_SYNDICATE", "hop_distance": 2},
+                ]},
+                {"total_connected_cards": 3},
+                {"total_shared_devices": 1},
+            ]
+        if card_id == "C09933-K2":  # HHG-007 - no connected entities (legitimate in-person)
+            return [{"@@results": []}, {"total_connected_cards": 0}, {"total_shared_devices": 0}]
+        if card_id == "C10434-K1":  # HHG-010 - no shared devices
+            return [{"@@results": []}, {"total_connected_cards": 0}, {"total_shared_devices": 0}]
         return [{"@@results": []}, {"total_connected_cards": 0}, {"total_shared_devices": 0}]
 
     def _fixture_detect_card_testing(self, params: Dict[str, Any]) -> List[dict]:
         card_id = str(params.get("target_card_id", ""))
+        if card_id == "C02923-K1":
+            return [
+                {"card_id": card_id},
+                {"is_card_testing_detected": True},
+                {"micro_authorization_count": 4},
+                {"subsequent_large_charge": 284.50},
+                {"sequence": [
+                    {"transaction_id": "3100101", "ts": "2016-08-14 10:12:01", "amount": 1.50, "channel": "online", "time_delta_sec": 0},
+                    {"transaction_id": "3100102", "ts": "2016-08-14 10:14:15", "amount": 2.00, "channel": "online", "time_delta_sec": 134},
+                    {"transaction_id": "3100103", "ts": "2016-08-14 10:16:40", "amount": 1.25, "channel": "online", "time_delta_sec": 145},
+                    {"transaction_id": "3100104", "ts": "2016-08-14 10:25:10", "amount": 284.50, "channel": "online", "time_delta_sec": 510},
+                ]},
+            ]
+        # HHG-014: no card testing, just shared device
+        if card_id in ("C13487-K1", "C09933-K2", "C10434-K1"):
+            return [
+                {"card_id": card_id},
+                {"is_card_testing_detected": False},
+                {"micro_authorization_count": 0},
+                {"subsequent_large_charge": 0.0},
+                {"sequence": []},
+            ]
         return [
             {"card_id": card_id},
-            {"is_card_testing_detected": (card_id == "C02923-K1")},
-            {"micro_authorization_count": 4 if card_id == "C02923-K1" else 0},
-            {"subsequent_large_charge": 284.50 if card_id == "C02923-K1" else 0.0},
-            {"sequence": [
-                {"transaction_id": "3100101", "ts": "2016-08-14 10:12:01", "amount": 1.50, "channel": "online", "time_delta_sec": 0},
-                {"transaction_id": "3100102", "ts": "2016-08-14 10:14:15", "amount": 2.00, "channel": "online", "time_delta_sec": 134},
-                {"transaction_id": "3100103", "ts": "2016-08-14 10:16:40", "amount": 1.25, "channel": "online", "time_delta_sec": 145},
-                {"transaction_id": "3100104", "ts": "2016-08-14 10:25:10", "amount": 284.50, "channel": "online", "time_delta_sec": 510},
-            ] if card_id == "C02923-K1" else []},
+            {"is_card_testing_detected": False},
+            {"micro_authorization_count": 0},
+            {"subsequent_large_charge": 0.0},
+            {"sequence": []},
         ]
 
     def _fixture_analyze_region_anomalies(self, params: Dict[str, Any]) -> List[dict]:
         card_id = str(params.get("target_card_id", ""))
+        if card_id == "C12382-K1":
+            return [
+                {"card_id": card_id},
+                {"total_transactions": 28},
+                {"region_distribution": {"R_315_87": 26, "R_441_87": 2}},
+                {"international_transaction_count": 0},
+            ]
+        if card_id == "C09933-K2":  # HHG-007 - primary region 264, 2552/2792 txns
+            return [
+                {"card_id": card_id},
+                {"total_transactions": 2792},
+                {"region_distribution": {"R_264_87": 2552, "R_112_87": 140, "R_88_87": 100}},
+                {"international_transaction_count": 0},
+            ]
+        if card_id == "C13487-K1":  # HHG-014 - mostly in-person, few online
+            return [
+                {"card_id": card_id},
+                {"total_transactions": 85},
+                {"region_distribution": {"R_142_87": 81, "R_142_87": 4}},
+                {"international_transaction_count": 0},
+            ]
+        if card_id == "C10434-K1":  # HHG-010 - primary region 469, 27/36 txns
+            return [
+                {"card_id": card_id},
+                {"total_transactions": 36},
+                {"region_distribution": {"R_469_87": 27, "R_469_87": 9}},
+                {"international_transaction_count": 0},
+            ]
         return [
             {"card_id": card_id},
             {"total_transactions": 28},
@@ -221,31 +311,123 @@ class TigerGraphConnectionManager:
         ]
 
     def _fixture_retrieve_similar_cases(self, params: Dict[str, Any]) -> List[dict]:
+        customer_id = str(params.get("customer_id", ""))
+        card_id = str(params.get("card_id", ""))
+        if customer_id == "C12382" or card_id == "C12382-K1":
+            return [
+                {"similar_cases": [
+                    {
+                        "case_id": "CC-0003",
+                        "status": "CLOSED",
+                        "outcome": "cleared",
+                        "pattern": "none",
+                        "exposure_usd": 442.92,
+                        "report_filed": False,
+                        "actions_taken": "CLOSE_NO_FRAUD",
+                        "analyst_notes": "Case CC-0003: model scored a $442.92 transaction at 0.91. Cardholder confirmed travel to the billing region in question. Alert cleared.",
+                        "match_reason": "SAME_CUSTOMER_PRECEDENT",
+                    }
+                ]},
+                {"precedent_count": 1},
+            ]
+        # HHG-007: prior cases CC-0104, CC-0765 (cleared, out-of-region or account-takeover)
+        if customer_id == "C09933" or card_id == "C09933-K2":
+            return [
+                {"similar_cases": [
+                    {
+                        "case_id": "CC-0104",
+                        "status": "CLOSED",
+                        "outcome": "cleared",
+                        "pattern": "out_of_region_use",
+                        "exposure_usd": 1250.00,
+                        "report_filed": True,
+                        "actions_taken": "BLOCK_CARD,FILE_REPORT",
+                        "analyst_notes": "Card used in region 88 while cardholder in region 264. Cardholder confirmed not traveling. Blocked and reissued.",
+                        "match_reason": "SAME_CUSTOMER_PRECEDENT",
+                    },
+                    {
+                        "case_id": "CC-0765",
+                        "status": "CLOSED",
+                        "outcome": "cleared",
+                        "pattern": "account_takeover",
+                        "exposure_usd": 3200.50,
+                        "report_filed": True,
+                        "actions_taken": "BLOCK_CARD,FILE_REPORT,REISSUE_CARD",
+                        "analyst_notes": "Multiple online transactions from new device and anonymous proxy. Cardholder denied all. Confirmed account takeover.",
+                        "match_reason": "SAME_CUSTOMER_PRECEDENT",
+                    }
+                ]},
+                {"precedent_count": 2},
+            ]
+        # HHG-014: no prior cases for this customer
+        if customer_id == "C13487" or card_id == "C13487-K1":
+            return [
+                {"similar_cases": []},
+                {"precedent_count": 0},
+            ]
+        # HHG-010: prior case CC-0873 (cleared)
+        if customer_id == "C10434" or card_id == "C10434-K1":
+            return [
+                {"similar_cases": [
+                    {
+                        "case_id": "CC-0873",
+                        "status": "CLOSED",
+                        "outcome": "cleared",
+                        "pattern": "none",
+                        "exposure_usd": 0,
+                        "report_filed": False,
+                        "actions_taken": "CLOSE_NO_FRAUD",
+                        "analyst_notes": "Model scored $520 transaction at 0.88. Cardholder confirmed legitimate travel purchase. Alert cleared.",
+                        "match_reason": "SAME_CUSTOMER_PRECEDENT",
+                    }
+                ]},
+                {"precedent_count": 1},
+            ]
         return [
-            {"similar_cases": [
-                {
-                    "case_id": "CC-0003",
-                    "status": "CLOSED",
-                    "outcome": "cleared",
-                    "pattern": "none",
-                    "exposure_usd": 442.92,
-                    "report_filed": False,
-                    "actions_taken": "CLOSE_NO_FRAUD",
-                    "analyst_notes": "Case CC-0003: model scored a $442.92 transaction at 0.91. Cardholder confirmed travel to the billing region in question. Alert cleared.",
-                    "match_reason": "SAME_CUSTOMER_PRECEDENT",
-                }
-            ]},
-            {"precedent_count": 1},
+            {"similar_cases": []},
+            {"precedent_count": 0},
         ]
 
     def _fixture_calculate_case_exposure(self, params: Dict[str, Any]) -> List[dict]:
         case_id = str(params.get("target_case_id", ""))
+        if case_id == "CC-0001":
+            return [
+                {"case_id": case_id},
+                {"total_exposure_usd": 155.43},
+                {"fraud_transaction_count": 1},
+                {"transaction_ids": ["3000120"]},
+                {"required_approval_route": "L1"},
+            ]
+        if case_id == "HHG-007":
+            return [
+                {"case_id": case_id},
+                {"total_exposure_usd": 0.0},
+                {"fraud_transaction_count": 0},
+                {"transaction_ids": []},
+                {"required_approval_route": "auto"},
+            ]
+        if case_id == "HHG-014":
+            return [
+                {"case_id": case_id},
+                {"total_exposure_usd": 74.96},
+                {"fraud_transaction_count": 1},
+                {"transaction_ids": ["3478561"]},
+                {"required_approval_route": "L1"},
+            ]
+        if case_id == "HHG-010":
+            return [
+                {"case_id": case_id},
+                {"total_exposure_usd": 1000.03},
+                {"fraud_transaction_count": 1},
+                {"transaction_ids": ["3506725"]},
+                {"required_approval_route": "L1"},
+            ]
         return [
             {"case_id": case_id},
-            {"total_exposure_usd": 155.43 if case_id == "CC-0001" else 0.0},
-            {"fraud_transaction_count": 1 if case_id == "CC-0001" else 0},
-            {"transaction_ids": ["3000120"] if case_id == "CC-0001" else []},
-            {"required_approval_route": "L1" if case_id == "CC-0001" else "auto"},
+            {"total_exposure_usd": 0.0},
+            {"fraud_transaction_count": 0},
+            {"transaction_ids": []},
+            {"required_approval_route": "auto"},
         ]
 
     def _fixture_validate_graph_metrics(self, params: Dict[str, Any]) -> List[dict]:
