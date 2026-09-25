@@ -8,23 +8,32 @@ import {
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types (aligned with backend InvestigationResponse contract)
 // ---------------------------------------------------------------------------
 interface InvestigationResult {
+  status: string;
   transaction_id: string;
   engine: string;
   investigation: { verdict: string; fraud_probability: number; summary: string };
   evidence: Array<{ source_tool: string; type: string; entity: string; relationship: string; attributes: Record<string, unknown> }>;
-  risk_signals: Array<{ signal: string; severity: string; guidance: string; policy_rule?: string }>;
-  related_entities: string[];
-  historical_precedents: string[];
+  risk_signals: Array<{ signal: string; severity: string; guidance: string; policy_rule?: string; source_tool?: string }>;
+  connected_entities: string[];
+  historical_context: string[];
+  exposure: { total_exposure_usd: number; fraud_transaction_count: number; required_approval_route: string };
   uncertainty: string[];
   next_best_actions: Array<{ action: string; route: string; reason: string }>;
   next_best_action: string;
   approval_route: string;
-  reasoning: string;
-  tool_calls: Array<{ tool: string; status: string; summary: string }>;
+  explanation: string;
+  tools_called: string[];
+  tool_audit: Array<{ tool: string; arguments: Record<string, unknown>; status: string; summary: string }>;
   warnings: string[];
+}
+
+// Safe accessors — the backend contract guarantees these arrays exist, but a
+// defensive default keeps the UI from throwing if a field is ever absent.
+function asArray<T>(v: T[] | undefined | null): T[] {
+  return Array.isArray(v) ? v : [];
 }
 
 // ---------------------------------------------------------------------------
@@ -108,14 +117,14 @@ function LoadingOverlay({ step }: { step: number }) {
 // Result dashboard
 // ---------------------------------------------------------------------------
 function ResultDashboard({ data }: { data: InvestigationResult }) {
-  const { investigation, evidence, risk_signals, related_entities, historical_precedents, uncertainty, next_best_actions, approval_route, reasoning, tool_calls } = data;
+  const { investigation, evidence, risk_signals, connected_entities, historical_context, uncertainty, next_best_actions, approval_route, explanation, tools_called, tool_audit } = data;
 
-  const txnEv = evidence.find(e => e.type === 'TRANSACTION_RECORD');
-  const cardEv = evidence.find(e => e.type === 'CARD_INSTRUMENT');
-  const deviceEv = evidence.find(e => e.type === 'DEVICE_PROFILE');
-  const geoEv = evidence.find(e => e.type === 'GEOGRAPHIC_DISPERSION');
-  const testEv = evidence.find(e => e.type === 'CARD_TESTING_EVALUATION');
-  const expEv = evidence.find(e => e.type === 'EXPOSURE_AGGREGATION');
+  const txnEv = evidence?.find(e => e.type === 'TRANSACTION_RECORD');
+  const cardEv = evidence?.find(e => e.type === 'CARD_INSTRUMENT');
+  const deviceEv = evidence?.find(e => e.type === 'DEVICE_PROFILE');
+  const geoEv = evidence?.find(e => e.type === 'GEOGRAPHIC_DISPERSION');
+  const testEv = evidence?.find(e => e.type === 'CARD_TESTING_EVALUATION');
+  const expEv = evidence?.find(e => e.type === 'EXPOSURE_AGGREGATION');
 
   const txnAttr = (txnEv?.attributes ?? {}) as Record<string, unknown>;
   const cardAttr = (cardEv?.attributes ?? {}) as Record<string, unknown>;
@@ -171,8 +180,8 @@ function ResultDashboard({ data }: { data: InvestigationResult }) {
         <div className="rounded-lg border border-border-default bg-bg-secondary p-5">
           <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-4">Entity Graph</h3>
           <div className="space-y-2">
-            {related_entities.length > 0
-              ? related_entities.map((e, i) => (
+            {asArray(connected_entities).length > 0
+              ? asArray(connected_entities).map((e, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-text-secondary">
                     <ChevronRight className="w-3 h-3 text-accent-blue flex-shrink-0" />
                     <span>{e}</span>
@@ -201,9 +210,9 @@ function ResultDashboard({ data }: { data: InvestigationResult }) {
       {/* Risk signals */}
       <div className="rounded-lg border border-border-default bg-bg-secondary p-5">
         <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-4">Risk Signals</h3>
-        {risk_signals.length > 0 ? (
+        {asArray(risk_signals).length > 0 ? (
           <div className="space-y-3">
-            {risk_signals.map((s, i) => (
+            {asArray(risk_signals).map((s, i) => (
               <div key={i} className={`flex items-start gap-3 p-3 rounded border ${severityColor(s.severity)}`}>
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
@@ -241,9 +250,9 @@ function ResultDashboard({ data }: { data: InvestigationResult }) {
         {/* Historical precedent */}
         <div className="rounded-lg border border-border-default bg-bg-secondary p-5">
           <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-4">Historical Precedent</h3>
-          {historical_precedents.length > 0 ? (
+          {asArray(historical_context).length > 0 ? (
             <div className="space-y-2">
-              {historical_precedents.map((p, i) => (
+              {asArray(historical_context).map((p, i) => (
                 <div key={i} className="text-xs text-text-secondary p-2 rounded bg-bg-tertiary border border-border-default font-mono">{p}</div>
               ))}
             </div>
@@ -300,14 +309,14 @@ function ResultDashboard({ data }: { data: InvestigationResult }) {
       {/* Reasoning */}
       <div className="rounded-lg border border-border-default bg-bg-secondary p-5">
         <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-3">Reasoning</h3>
-        <p className="text-sm text-text-secondary leading-relaxed">{reasoning}</p>
+        <p className="text-sm text-text-secondary leading-relaxed">{explanation}</p>
       </div>
 
       {/* MCP tool calls */}
       <div className="rounded-lg border border-border-default bg-bg-secondary p-5">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-3">MCP Tools Called ({tool_calls.length})</h3>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-text-tertiary mb-3">MCP Tools Called ({asArray(tool_audit).length})</h3>
         <div className="space-y-1">
-          {tool_calls.map((t, i) => (
+          {asArray(tool_audit).map((t, i) => (
             <div key={i} className="flex items-center gap-2 text-xs font-mono">
               <span className={t.status === 'ok' ? 'text-risk-low' : 'text-risk-critical'}>●</span>
               <span className="text-accent-blue">{t.tool}</span>
